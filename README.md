@@ -21,9 +21,9 @@ the agent never holds the private key, and it cannot exceed its budget.
 - [x] Real x402 payment settling on Hedera testnet - [HashScan proof](./PROOF.md)
 - [x] Pay-gated data server (Hono + `@x402/hono` + `@x402/hedera`), facilitator = blocky402
 - [x] Delegated signer: private key never enters the agent/LLM context
-- [ ] AI buyer agent (Gemini) that chooses products from the catalog *(in progress)*
-- [ ] Hard spend-budget policy with human-in-the-loop at the cap
-- [ ] On-chain purchase receipts via Hedera Consensus Service (HCS)
+- [x] AI buyer agent (Gemini) that chooses products from the catalog
+- [x] Hard spend-budget policy with human-in-the-loop at the cap
+- [x] On-chain purchase receipts via Hedera Consensus Service (HCS)
 - [ ] Web UI: live 402 -> pay -> unlock with a running spend meter
 
 ## Architecture

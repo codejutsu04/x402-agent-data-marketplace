@@ -3,6 +3,7 @@
 // than exceed it. This is the consent/no-drain guarantee the bounty asks for.
 import { createBuyer, type Purchase } from "./buyer.js";
 import { planPurchases, synthesize } from "./llm.js";
+import { createAttestor, type Attestation } from "./attest.js";
 import { validateRequest } from "../core/catalog.js";
 
 const TINYBARS_PER_HBAR = 1e8;
@@ -13,14 +14,17 @@ export interface SkippedBuy {
     reason: string;
 }
 
+export type AttestedPurchase = Purchase & { attestation?: Attestation };
+
 export interface AgentReport {
     question: string;
     reasoning: string;
     budgetHbar: number;
     spentHbar: number;
-    purchases: Purchase[];
+    purchases: AttestedPurchase[];
     skipped: SkippedBuy[];
     stoppedForBudget: boolean;
+    topicId?: string;
     answer: string;
 }
 
@@ -39,13 +43,14 @@ export const runAgent = async (
     const log = opts.log ?? (() => {});
 
     const buyer = createBuyer();
+    const attestor = createAttestor();
     const catalog = await buyer.catalog();
 
     log(`planning for: "${question}" (budget ${budgetHbar} HBAR)`);
     const plan = await planPurchases(question, catalog);
     log(`plan: ${plan.reasoning}`);
 
-    const purchases: Purchase[] = [];
+    const purchases: AttestedPurchase[] = [];
     const skipped: SkippedBuy[] = [];
     let spentAtomic = 0;
     let stoppedForBudget = false;
@@ -72,11 +77,29 @@ export const runAgent = async (
         }
 
         log(`buying ${item.product} ${JSON.stringify(params)} ...`);
-        const purchase = await buyer.buy(item.product, params);
+        const purchase: AttestedPurchase = await buyer.buy(item.product, params);
         spentAtomic += priceAtomic;
-        purchases.push(purchase);
         log(`  paid ${(priceAtomic / TINYBARS_PER_HBAR).toFixed(4)} HBAR, tx ${purchase.txId}`);
+
+        if (attestor) {
+            try {
+                purchase.attestation = await attestor.submit({
+                    product: purchase.product,
+                    params: purchase.params,
+                    amountAtomic: purchase.amountAtomic,
+                    paymentTxId: purchase.txId,
+                    payer: purchase.payer,
+                    asOf: purchase.asOf,
+                });
+                log(`  attested to HCS topic ${purchase.attestation.topicId} #${purchase.attestation.sequenceNumber}`);
+            } catch (err) {
+                log(`  attestation failed (non-fatal): ${(err as Error).message}`);
+            }
+        }
+        purchases.push(purchase);
     }
+
+    attestor?.close();
 
     const answer = purchases.length
         ? await synthesize(
@@ -97,6 +120,7 @@ export const runAgent = async (
         purchases,
         skipped,
         stoppedForBudget,
+        topicId: attestor?.topicId,
         answer,
     };
 };

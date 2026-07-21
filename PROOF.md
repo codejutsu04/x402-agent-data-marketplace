@@ -19,6 +19,12 @@ Collect every real x402 payment here. These links go in the final README + submi
 - **HashScan (the one buy it made):** https://hashscan.io/testnet/transaction/0.0.7162784-1784630677-041122013
 - Budget 0.02 HBAR; agent bought spot-price (0.01), then STOPPED before `quote` (would hit 0.03) and deferred to human. Proves no-drain/consent guarantee.
 
+## 4. HCS on-chain purchase receipts (Phase C)
+- **Topic:** 0.0.9670016 - https://hashscan.io/testnet/topic/0.0.9670016
+- Every agent purchase logs a signed receipt message to this topic (product, params, payment tx id, payer, amount).
+- Verified on mirror node: 2 messages, each decodes to a receipt linked to its payment tx.
+- Example run bought spot-price (#1, payment 0.0.7162784@1784631046.570145471) + quote (#2, payment 0.0.7162784@1784631056.483830814).
+
 ## Accounts
 - Buyer / client: 0.0.4480495 (user's testnet account)
 - Seller / service: 0.0.9669709 (auto-created via scripts/create-payee.ts)

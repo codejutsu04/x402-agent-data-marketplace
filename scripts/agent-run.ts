@@ -35,8 +35,19 @@ if (report.purchases.length) {
             `  - ${p.product} ${JSON.stringify(p.params)} = ` +
                 `${(Number(p.amountAtomic) / 1e8).toFixed(4)} HBAR`,
         );
-        console.log(`    ${hashscan(p.txId)}`);
+        console.log(`    payment: ${hashscan(p.txId)}`);
+        if (p.attestation) {
+            console.log(
+                `    receipt: HCS topic ${p.attestation.topicId} #${p.attestation.sequenceNumber}`,
+            );
+        }
     }
+}
+
+if (report.topicId) {
+    console.log(
+        `\nOn-chain receipt trail: https://hashscan.io/testnet/topic/${report.topicId}`,
+    );
 }
 
 if (report.skipped.length) {
