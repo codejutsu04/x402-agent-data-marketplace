@@ -1,0 +1,22 @@
+# Secrets - NEVER commit
+.env
+.env.local
+*.key
+*.pem
+
+# Deps
+node_modules/
+dist/
+build/
+.next/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
