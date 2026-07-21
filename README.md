@@ -24,7 +24,7 @@ the agent never holds the private key, and it cannot exceed its budget.
 - [x] AI buyer agent (Gemini) that chooses products from the catalog
 - [x] Hard spend-budget policy with human-in-the-loop at the cap
 - [x] On-chain purchase receipts via Hedera Consensus Service (HCS)
-- [ ] Web UI: live 402 -> pay -> unlock with a running spend meter
+- [x] Web UI: live 402 -> pay -> unlock with a running spend meter
 
 ## Architecture
 
@@ -65,8 +65,32 @@ Requires Node.js >= 20.
 npm install
 cp .env.example .env      # fill in testnet creds + an LLM key
 npm test                  # offline contract/unit tests
-npm run dev               # server on http://localhost:4021
+npm run dev               # resource server on http://localhost:4021
 npm run e2e               # real paid request through blocky402 on testnet
+```
+
+First-time on-chain setup (creates a seller account + an HCS receipt topic, prints
+ids to paste into `.env`):
+
+```bash
+npx tsx scripts/create-payee.ts   # -> PAY_TO_ACCOUNT
+npx tsx scripts/create-topic.ts   # -> HCS_TOPIC_ID
+```
+
+### Run the agent
+
+```bash
+npm run dev                                   # terminal 1: resource server
+npm run agent -- "how is AAPL doing?"         # terminal 2: CLI agent
+AGENT_BUDGET_HBAR=0.02 npm run agent -- "..."  # tighter budget -> watch it stop at the cap
+```
+
+### Demo UI (for the video)
+
+```bash
+npm run dev     # terminal 1: resource server (:4021)
+npm run demo    # terminal 2: demo UI     (:4022)
+# open http://localhost:4022 - type a question, watch plan -> pay -> unlock live
 ```
 
 ## Catalog

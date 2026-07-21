@@ -28,9 +28,35 @@ export interface AgentReport {
     answer: string;
 }
 
+export type AgentEvent =
+    | { type: "plan"; reasoning: string; budgetHbar: number }
+    | {
+          type: "buy_start";
+          product: string;
+          params: Record<string, string>;
+          priceHbar: number;
+      }
+    | {
+          type: "paid";
+          product: string;
+          amountHbar: number;
+          txId: string;
+          spentHbar: number;
+          budgetHbar: number;
+      }
+    | {
+          type: "attested";
+          product: string;
+          topicId: string;
+          sequenceNumber: string;
+      }
+    | { type: "skip"; product: string; reason: string; budgetStop: boolean }
+    | { type: "answer"; text: string };
+
 export interface AgentOptions {
     budgetHbar?: number;
     log?: (msg: string) => void;
+    onEvent?: (event: AgentEvent) => void;
 }
 
 export const runAgent = async (
@@ -41,6 +67,7 @@ export const runAgent = async (
         opts.budgetHbar ?? Number(process.env.AGENT_BUDGET_HBAR ?? "0.1");
     const budgetAtomic = Math.round(budgetHbar * TINYBARS_PER_HBAR);
     const log = opts.log ?? (() => {});
+    const emit = opts.onEvent ?? (() => {});
 
     const buyer = createBuyer();
     const attestor = createAttestor();
@@ -49,6 +76,7 @@ export const runAgent = async (
     log(`planning for: "${question}" (budget ${budgetHbar} HBAR)`);
     const plan = await planPurchases(question, catalog);
     log(`plan: ${plan.reasoning}`);
+    emit({ type: "plan", reasoning: plan.reasoning, budgetHbar });
 
     const purchases: AttestedPurchase[] = [];
     const skipped: SkippedBuy[] = [];
@@ -61,25 +89,38 @@ export const runAgent = async (
         if (invalid) {
             skipped.push({ product: item.product, params, reason: invalid.message });
             log(`skip ${item.product}: ${invalid.message}`);
+            emit({ type: "skip", product: item.product, reason: invalid.message, budgetStop: false });
             continue;
         }
 
         const priceAtomic = Number(await buyer.priceAtomic(item.product));
         if (spentAtomic + priceAtomic > budgetAtomic) {
-            skipped.push({
-                product: item.product,
-                params,
-                reason: `would exceed budget (need ${(priceAtomic / TINYBARS_PER_HBAR).toFixed(4)} HBAR, ${((budgetAtomic - spentAtomic) / TINYBARS_PER_HBAR).toFixed(4)} left)`,
-            });
+            const reason = `would exceed budget (need ${(priceAtomic / TINYBARS_PER_HBAR).toFixed(4)} HBAR, ${((budgetAtomic - spentAtomic) / TINYBARS_PER_HBAR).toFixed(4)} left)`;
+            skipped.push({ product: item.product, params, reason });
             stoppedForBudget = true;
             log(`BUDGET STOP before ${item.product} - deferring to human`);
+            emit({ type: "skip", product: item.product, reason, budgetStop: true });
             break; // stop rather than exceed
         }
 
+        emit({
+            type: "buy_start",
+            product: item.product,
+            params,
+            priceHbar: priceAtomic / TINYBARS_PER_HBAR,
+        });
         log(`buying ${item.product} ${JSON.stringify(params)} ...`);
         const purchase: AttestedPurchase = await buyer.buy(item.product, params);
         spentAtomic += priceAtomic;
         log(`  paid ${(priceAtomic / TINYBARS_PER_HBAR).toFixed(4)} HBAR, tx ${purchase.txId}`);
+        emit({
+            type: "paid",
+            product: purchase.product,
+            amountHbar: priceAtomic / TINYBARS_PER_HBAR,
+            txId: purchase.txId,
+            spentHbar: spentAtomic / TINYBARS_PER_HBAR,
+            budgetHbar,
+        });
 
         if (attestor) {
             try {
@@ -92,6 +133,12 @@ export const runAgent = async (
                     asOf: purchase.asOf,
                 });
                 log(`  attested to HCS topic ${purchase.attestation.topicId} #${purchase.attestation.sequenceNumber}`);
+                emit({
+                    type: "attested",
+                    product: purchase.product,
+                    topicId: purchase.attestation.topicId,
+                    sequenceNumber: purchase.attestation.sequenceNumber,
+                });
             } catch (err) {
                 log(`  attestation failed (non-fatal): ${(err as Error).message}`);
             }
@@ -111,6 +158,7 @@ export const runAgent = async (
               })),
           )
         : "No data purchased (nothing within budget or plan was empty).";
+    emit({ type: "answer", text: answer });
 
     return {
         question,

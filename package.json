@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "e2e": "tsx scripts/e2e-pay.ts",
     "agent": "tsx scripts/agent-run.ts",
+    "demo": "tsx src/demo/server.ts",
     "web:dev": "npm run dev -w web",
     "web:build": "npm run build -w web",
     "web:preview": "npm run preview -w web",

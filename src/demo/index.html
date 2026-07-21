@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>x402 Agent Data Marketplace — Hedera</title>
+<style>
+  :root {
+    --bg: #0d1017; --panel: #161b25; --panel2: #1e2531; --line: #2a3341;
+    --text: #e6edf3; --muted: #8b98a9; --accent: #8259ef; --accent2: #21c8a8;
+    --warn: #f0a020; --ok: #21c8a8; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
+  header h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: -0.02em; }
+  header p { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
+  .badge { color: var(--accent2); font-weight: 600; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .grow { flex: 1 1 320px; }
+  input {
+    width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 10px 12px; font-size: 15px; font-family: inherit;
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+  button {
+    background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+    padding: 11px 20px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { background: var(--panel2); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .meter { height: 10px; background: var(--panel2); border-radius: 999px; overflow: hidden; margin: 8px 0; }
+  .meter > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .4s ease; }
+  .meter.over > div { background: var(--warn); }
+  .meterlabel { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+  .timeline li:last-child { border-bottom: 0; }
+  .t-icon { width: 20px; text-align: center; flex: 0 0 20px; }
+  .t-body { flex: 1; }
+  .t-body .mono { font-family: var(--mono); font-size: 12px; color: var(--muted); word-break: break-all; }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .pill { font-size: 11px; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; color: var(--muted); }
+  .answer { background: var(--panel2); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 14px 16px; font-size: 15px; }
+  .hidden { display: none; }
+  .muted { color: var(--muted); font-size: 13px; }
+  h2 { font-size: 15px; margin: 0 0 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>x402 Agent Data Marketplace</h1>
+    <p>An autonomous AI agent buys market data <span class="badge">per request</span>, pays in HBAR over
+       <span class="badge">x402</span>, stays within a hard budget, and logs every receipt <span class="badge">on-chain</span> — live on Hedera testnet.</p>
+  </header>
+
+  <div class="card">
+    <div class="row">
+      <div class="grow">
+        <label for="q">Ask the agent</label>
+        <input id="q" value="How is AAPL doing right now — price and full quote?" />
+      </div>
+      <div style="flex:0 0 130px">
+        <label for="b">Budget (HBAR)</label>
+        <input id="b" type="number" step="0.01" min="0" value="0.1" />
+      </div>
+      <button id="go">Run agent</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="card" id="meterCard">
+    <div class="meterlabel"><span>Spend</span><span id="meterText">0.0000 / 0.1000 HBAR</span></div>
+    <div class="meter" id="meter"><div></div></div>
+    <div class="muted" id="planLine">Idle. Ask a question to begin.</div>
+  </div>
+
+  <div class="card">
+    <h2>Live activity</h2>
+    <ul class="timeline" id="log"></ul>
+  </div>
+
+  <div class="card hidden" id="answerCard">
+    <h2>Answer</h2>
+    <div class="answer" id="answer"></div>
+    <p class="muted" id="trail" style="margin-bottom:0"></p>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const presets = [
+    "How is AAPL doing right now — price and full quote?",
+    "Just give me the spot price of TSLA",
+    "Full picture on NVDA: price, quote, and OHLC for 2026-07-20",
+  ];
+  const chips = $("chips");
+  presets.forEach((p) => {
+    const el = document.createElement("span");
+    el.className = "chip"; el.textContent = p;
+    el.onclick = () => { $("q").value = p; };
+    chips.appendChild(el);
+  });
+
+  let budget = 0.1;
+  const hashscanTx = (txId) => {
+    if (!txId) return null;
+    const [acct, ts] = txId.split("@");
+    if (!ts) return null;
+    return `https://hashscan.io/testnet/transaction/${acct}-${ts.replace(".", "-")}`;
+  };
+  const addLog = (icon, html) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="t-icon">${icon}</span><span class="t-body">${html}</span>`;
+    $("log").appendChild(li);
+    li.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  const setMeter = (spent) => {
+    const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
+    $("meter").firstElementChild.style.width = pct + "%";
+    $("meter").classList.toggle("over", spent >= budget);
+    $("meterText").textContent = `${spent.toFixed(4)} / ${budget.toFixed(4)} HBAR`;
+  };
+
+  let es = null;
+  $("go").onclick = () => {
+    if (es) es.close();
+    const q = $("q").value.trim();
+    budget = parseFloat($("b").value) || 0.1;
+    $("log").innerHTML = "";
+    $("answerCard").classList.add("hidden");
+    $("answer").textContent = "";
+    $("trail").innerHTML = "";
+    setMeter(0);
+    $("planLine").textContent = "Thinking…";
+    $("go").disabled = true;
+
+    const url = `/api/run?question=${encodeURIComponent(q)}&budget=${budget}`;
+    es = new EventSource(url);
+
+    es.addEventListener("plan", (e) => {
+      const d = JSON.parse(e.data);
+      $("planLine").textContent = "Plan: " + d.reasoning;
+      addLog("🧠", `<b>Planned</b> — ${d.reasoning}`);
+    });
+    es.addEventListener("buy_start", (e) => {
+      const d = JSON.parse(e.data);
+      addLog("🛒", `Requesting <b>${d.product}</b> ${JSON.stringify(d.params)} — server replies <span class="pill">402 Payment Required</span> (${d.priceHbar.toFixed(4)} HBAR)`);
+    });
+    es.addEventListener("paid", (e) => {
+      const d = JSON.parse(e.data);
+      const link = hashscanTx(d.txId);
+      setMeter(d.spentHbar);
+      addLog("✅", `<b>Paid</b> ${d.amountHbar.toFixed(4)} HBAR for ${d.product} → <span class="pill">200 OK</span><br><span class="mono">${d.txId}</span> ${link ? `· <a href="${link}" target="_blank">HashScan ↗</a>` : ""}`);
+    });
+    es.addEventListener("attested", (e) => {
+      const d = JSON.parse(e.data);
+      addLog("🧾", `Receipt written to HCS topic <span class="mono">${d.topicId}</span> #${d.sequenceNumber}`);
+    });
+    es.addEventListener("skip", (e) => {
+      const d = JSON.parse(e.data);
+      const icon = d.budgetStop ? "🛑" : "⚠️";
+      addLog(icon, `${d.budgetStop ? "<b>Budget cap reached</b> — stopping and deferring to human. " : ""}Skipped <b>${d.product}</b>: ${d.reason}`);
+    });
+    es.addEventListener("answer", (e) => {
+      const d = JSON.parse(e.data);
+      $("answer").textContent = d.text;
+      $("answerCard").classList.remove("hidden");
+    });
+    es.addEventListener("done", (e) => {
+      const d = JSON.parse(e.data);
+      if (d.topicId) {
+        $("trail").innerHTML = `On-chain receipt trail: <a href="https://hashscan.io/testnet/topic/${d.topicId}" target="_blank">HCS topic ${d.topicId} ↗</a>`;
+      }
+      addLog("🏁", `<b>Done.</b> Spent ${d.spentHbar.toFixed(4)} HBAR across ${d.purchases.length} purchase(s).`);
+      $("go").disabled = false;
+      es.close();
+    });
+    es.addEventListener("error", (e) => {
+      let msg = "stream error";
+      try { msg = JSON.parse(e.data).message; } catch {}
+      addLog("❌", `Error: ${msg}`);
+      $("go").disabled = false;
+      if (es) es.close();
+    });
+  };
+</script>
+</body>
+</html>
