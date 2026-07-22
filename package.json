@@ -13,15 +13,8 @@
     "typecheck": "tsc --noEmit",
     "e2e": "tsx scripts/e2e-pay.ts",
     "agent": "tsx scripts/agent-run.ts",
-    "demo": "tsx src/demo/server.ts",
-    "web:dev": "npm run dev -w web",
-    "web:build": "npm run build -w web",
-    "web:preview": "npm run preview -w web",
-    "web:typecheck": "npm run typecheck -w web"
+    "demo": "tsx src/demo/server.ts"
   },
-  "workspaces": [
-    "web"
-  ],
   "dependencies": {
     "@hono/node-server": "^1.13.0",
     "@x402/core": "2.16.0",
