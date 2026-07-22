@@ -10,6 +10,10 @@ dist/
 build/
 .next/
 
+# Build caches
+.astro/
+web/.astro/
+
 # Logs
 *.log
 npm-debug.log*
