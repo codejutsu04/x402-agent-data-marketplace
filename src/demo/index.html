@@ -68,8 +68,8 @@
   <div class="card">
     <div class="row">
       <div class="grow">
-        <label for="q">Ask the agent</label>
-        <input id="q" value="How is AAPL doing right now — price and full quote?" />
+        <label for="q">Ask the buyer agent</label>
+        <input id="q" value="Give me the full picture on AAPL: spot price, the bid/ask quote, and the OHLC candle for 2026-07-20" />
       </div>
       <div style="flex:0 0 130px">
         <label for="b">Budget (HBAR)</label>
@@ -101,9 +101,9 @@
 <script>
   const $ = (id) => document.getElementById(id);
   const presets = [
+    "Give me the full picture on AAPL: spot price, the bid/ask quote, and the OHLC candle for 2026-07-20",
     "How is AAPL doing right now — price and full quote?",
     "Just give me the spot price of TSLA",
-    "Full picture on NVDA: price, quote, and OHLC for 2026-07-20",
   ];
   const chips = $("chips");
   presets.forEach((p) => {

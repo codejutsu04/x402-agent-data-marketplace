@@ -9,6 +9,26 @@ logging every purchase on-chain. Built for the [Hedera x402 Bounty](https://hede
 > stops the moment it hits its budget, and returns an answer plus a full spend receipt -
 > every payment verifiable on HashScan.
 
+**Two participants:**
+
+- a **buyer agent** - an autonomous, LLM-driven client (your wallet) that decides what to
+  buy and pays per request, under a hard budget;
+- a **seller-operated data service** - an x402-paywalled API that prices each product and
+  hands over data only after payment settles.
+
+They interact purely over HTTP + x402: request, `402 Payment Required`, signed payment,
+`200 OK`. No accounts, no API keys, no subscription.
+
+## Demo + on-chain proof
+
+- **Demo video:** _(add link before submission)_
+- **Live receipt trail (HCS topic):** [0.0.9670016](https://hashscan.io/testnet/topic/0.0.9670016)
+- **Example payments** (buyer `0.0.4480495` -> seller `0.0.9669709`, gas paid by facilitator `0.0.7162784`):
+  - spot-price 0.01 HBAR - [tx](https://hashscan.io/testnet/transaction/0.0.7162784-1784816634-086911311)
+  - quote 0.02 HBAR - [tx](https://hashscan.io/testnet/transaction/0.0.7162784-1784816639-341313091)
+  - ohlc 0.05 HBAR - [tx](https://hashscan.io/testnet/transaction/0.0.7162784-1784816642-561877564)
+- Full log in [PROOF.md](./PROOF.md).
+
 ## Why it matters
 
 Agents increasingly need to buy things - data, compute, other agents' output - without a
