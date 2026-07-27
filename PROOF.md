@@ -1,8 +1,8 @@
-# On-chain Proof Log (Hedera testnet)
+# On-chain Proof (Hedera testnet)
 
-Collect every real x402 payment here. These links go in the final README + submission.
+Real x402 payments and receipts settled by this project, each verifiable on HashScan.
 
-## 1. First x402 payment - reference starter (spot-price, 0.01 HBAR)
+## 1. First x402 payment (spot-price, 0.01 HBAR)
 - **HashScan:** https://hashscan.io/testnet/transaction/0.0.7162784-1784628963-699493868
 - Result: SUCCESS
 - Buyer (payer): 0.0.4480495 -> −0.01 HBAR
