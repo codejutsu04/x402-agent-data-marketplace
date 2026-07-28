@@ -9,5 +9,5 @@ const provider = createProvider(config.dataProvider);
 const app = createApp(provider, config);
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(`x402 financial data server (provider=${provider.id}) listening on :${info.port}`);
+  console.log(`x402 seller data service (provider=${provider.id}) listening on :${info.port}`);
 });
