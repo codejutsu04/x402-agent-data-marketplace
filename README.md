@@ -21,7 +21,7 @@ They interact purely over HTTP + x402: request, `402 Payment Required`, signed p
 
 ## Demo + on-chain proof
 
-- **Demo video:** _(add link before submission)_
+- **Demo video:** [Watch on Loom](https://www.loom.com/share/0f5d09d87ec34a9baa7b45d3e7ab6721)
 - **Live receipt trail (HCS topic):** [0.0.9670016](https://hashscan.io/testnet/topic/0.0.9670016)
 - **Example payments** (buyer `0.0.4480495` -> seller `0.0.9669709`, gas paid by facilitator `0.0.7162784`):
   - spot-price 0.01 HBAR - [tx](https://hashscan.io/testnet/transaction/0.0.7162784-1784816634-086911311)
